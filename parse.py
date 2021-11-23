@@ -48,6 +48,8 @@ def tokenise(string):
         else:
             current += char
 
+    output.append(Token(current, inQuotes))
+
     output = [token for token in output if token.text != ""]
 
     for index, token in enumerate(output):
@@ -91,9 +93,10 @@ def parse_sql_str(sql_str):
 
 
 def tests():
-    #print(str(tokenise("SELECT * FROM thing WHERE name='stuff and things'")))
-    #print(str(categorise(tokenise("SELECT * FROM thing WHERE name='stuff and things'"))))
+    # print(str(tokenise("SELECT * FROM thing WHERE name='stuff and things'")))
+    # print(str(categorise(tokenise("SELECT * FROM thing WHERE name='stuff and things'"))))
     print(parse_sql_str("CREATE_TABLE People ( PersonID string, PersonName string, location string )"))
+
 
 if __name__ == "__main__":
     tests()
