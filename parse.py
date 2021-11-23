@@ -69,7 +69,7 @@ def tokenise(string):
 
 def categorise(tokens):
     output = []
-    keywords = ["SELECT", "FROM", "WHERE", "CREATE", "CREATE_TABLE", "DROP_TABLE", "INSERT_INTO"]
+    keywords = ["SELECT", "FROM", "WHERE", "CREATE", "CREATE_TABLE", "DROP_TABLE", "INSERT_INTO", "VALUES"]
     symbols = ["=", "*", "(", ")", ","]
 
     for index, token in enumerate(tokens):

@@ -55,3 +55,18 @@ def drop_table(name):
 
 def get_tables():
     return db.tables
+
+
+def insert_into(table, values):
+    if table not in map(lambda x: x.name, db.tables):
+        raise Exception("Table doesn't exist")
+
+    table = next(filter(lambda x: x.name == table, db.tables))
+
+    row = []
+    for i, value in enumerate(values):
+        row.append(Row(table.definition[i]["type"], table.definition[i]["name"], value))
+
+    table.rows.append(row)
+
+    print(str(db))

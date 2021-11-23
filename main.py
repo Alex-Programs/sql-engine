@@ -54,27 +54,42 @@ def insert_into(result):
 
     table_name = result[1].text
 
-    if result[2].type != TokenType.SYMBOL or result[2].text != "(":
+    if result[2].text != "VALUES" or result[2].type != TokenType.KEYWORD:
+        raise Exception("Invalid insert statement")
+
+    if result[3].type != TokenType.SYMBOL or result[3].text != "(":
         raise Exception("Invalid table definition")
 
     i = 2
 
-    table = [for table in backend.get_tables() if table.name == table_name][0]
+    table = [table for table in backend.get_tables() if table.name == table_name][0]
     fields = table.definition
     maxLength = len(fields)
 
     values = []
 
-    # parse out the values
     while True:
         i += 1
+        if i >= len(result):
+            break
+
+        if len(values) > maxLength:
+            raise Exception("Too many values")
+
+        print(str(result[i]))
+
+        if result[i].type == TokenType.STRING or result[i].type == TokenType.LITERAL:
+            values.append(result[i].text)
+
+    backend.insert_into(table_name, values)
 
 
 test = True
 
 if test:
     create_table(parse.parse_sql_str("CREATE_TABLE test ( name string , anothername string )"))
-    drop_table(parse.parse_sql_str("DROP_TABLE test"))
+    # drop_table(parse.parse_sql_str("DROP_TABLE test"))
+    insert_into(parse.parse_sql_str("INSERT_INTO test VALUES ( 'test' , 'test2' )"))
 
     import sys
 
