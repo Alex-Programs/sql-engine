@@ -23,11 +23,11 @@ def create_table(result):
 
         if i + increment >= len(result):
             current.append([result[i].text])
-            fields.append({"name": current[0], "type": current[1][0]})
+            fields.append({"name": current[0][0], "type": current[1][0]})
             break
 
         if result[i].text == ",":
-            fields.append({"name": current[0], "type": current[1][0]})
+            fields.append({"name": current[0][0], "type": current[1][0]})
             current = []
             continue
 
@@ -76,33 +76,73 @@ def insert_into(result):
         if len(values) > maxLength:
             raise Exception("Too many values")
 
-        print(str(result[i]))
-
         if result[i].type == TokenType.STRING or result[i].type == TokenType.LITERAL:
             values.append(result[i].text)
 
     backend.insert_into(table_name, values)
 
 
+def select(result):
+    if result[1].type != TokenType.LITERAL and result[1].type != TokenType.STRING and result[1].text != "*":
+        raise Exception("Invalid selector")
+
+    toSelect = []
+
+    endIndex = 0
+
+    for index, i in enumerate(result[1:]):
+        if i.type == TokenType.LITERAL or i.type == TokenType.STRING or i.text == "*":
+            toSelect.append(i.text)
+
+        if i.type == TokenType.KEYWORD:
+            endIndex = index - 1
+            break
+
+    if result[endIndex + 2].text != "FROM":
+        raise Exception("Expected 'FROM', got " + str(result[endIndex + 1].text))
+
+    if result[endIndex + 3].type != TokenType.LITERAL and result[endIndex + 2].type != TokenType.STRING:
+        raise Exception("Invalid table name " + str(result[endIndex + 3].text))
+
+    if result[endIndex + 3].text not in map(lambda x: x.name, backend.get_tables()):
+        raise Exception("Table does not exist " + str(result[endIndex + 3].text))
+
+    table_name = result[endIndex + 3].text
+
+    try:
+        result[endIndex + 4].text
+    except IndexError:
+        return backend.select(table_name, toSelect)
+
+    # filters
+
+    if result[endIndex + 4].text != "WHERE":
+        raise Exception("Expected 'WHERE', got " + str(result[endIndex + 4].text))
+
+    print(str(result[endIndex + 4:]))
+
+
 test = True
 
 if test:
-    create_table(parse.parse_sql_str("CREATE_TABLE test ( name string , anothername string )"))
+    create_table(parse.parse_sql_str("CREATE_TABLE test ( name string , secondname string )"))
     # drop_table(parse.parse_sql_str("DROP_TABLE test"))
-    insert_into(parse.parse_sql_str("INSERT_INTO test VALUES ( 'test' , 'test2' )"))
+    insert_into(parse.parse_sql_str("INSERT_INTO test VALUES ( 'name1' , 'secondname2' )"))
+    insert_into(parse.parse_sql_str("INSERT_INTO test VALUES ( 'name3' , 'secondname2' )"))
+    print(str(select(parse.parse_sql_str("SELECT * FROM test"))))
+    print(str(select(parse.parse_sql_str("SELECT name FROM test"))))
+    # print(str(select(parse.parse_sql_str("SELECT name , secondname FROM test WHERE name='name3'"))))
 
     import sys
 
     sys.exit()
 
 while True:
-    text = input('> ')
-    if text == 'exit':
+    text = input("> ")
+    if text == "exit":
         break
 
     result = parse.parse_sql_str(text)
-
-    print(str(result))
 
     if result[0].type != TokenType.KEYWORD:
         print("Invalid keyword")
@@ -113,3 +153,12 @@ while True:
 
     elif result[0].text == "DROP_TABLE":
         drop_table(result)
+
+    elif result[0].text == "INSERT_INTO":
+        insert_into(result)
+
+    elif result[0].text == "SELECT":
+        select(result)
+
+    else:
+        print("Invalid operation")

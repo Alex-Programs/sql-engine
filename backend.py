@@ -16,9 +16,7 @@ class Table():
 # inefficient but the goal of this db was never to be efficient
 @dataclass
 class Row():
-    type: str
-    label: str
-    value: str
+    values: list
 
 
 db = Database([])
@@ -63,10 +61,24 @@ def insert_into(table, values):
 
     table = next(filter(lambda x: x.name == table, db.tables))
 
-    row = []
-    for i, value in enumerate(values):
-        row.append(Row(table.definition[i]["type"], table.definition[i]["name"], value))
+    table.rows.append(Row(values))
 
-    table.rows.append(row)
 
-    print(str(db))
+def select(tableName, toSelect, where=None):
+    # TODO make this. return only the indexes defined in the list of selectors using the definition in the table
+    def get_from_row_with_selectors(row, selectors, table):
+
+    if tableName not in map(lambda x: x.name, db.tables):
+        raise Exception("Table doesn't exist")
+
+    table = next(filter(lambda x: x.name == tableName, db.tables))
+
+    if where is None:
+        if len(toSelect) == 1 and toSelect[0] == "*":
+            return [row.values for row in table.rows]
+
+        output = []
+        for row in table.rows:
+            output.append(get_from_row_with_selectors(row, toSelect, table))
+
+        return output
