@@ -66,19 +66,44 @@ def insert_into(table, values):
 
 def select(tableName, toSelect, where=None):
     # TODO make this. return only the indexes defined in the list of selectors using the definition in the table
-    def get_from_row_with_selectors(row, selectors, table):
+    def get_from_row_with_selectors(row, selectors, table, where=None):
+        indexes = []
+        # todo make a hashmap of definitions to indexes
+        id2name = {}
+        name2id = {}
+
+        for index, definition in enumerate(table.definition):
+            if definition["name"] in selectors or selectors == ["*"]:
+                indexes.append(index)
+
+            id2name[index] = definition["name"]
+            name2id[definition["name"]] = index
+
+        returnRow = []
+        for index in indexes:
+            if not where:
+                returnRow.append(row.values[index])
+            else:
+                for whereVal in where.keys():
+                    for name in name2id.keys():
+                        if name == whereVal:
+                            if row.values[name2id[name]] == where[name]:
+                                returnRow.append(row.values[index])
+                                continue
+
+        return returnRow
 
     if tableName not in map(lambda x: x.name, db.tables):
         raise Exception("Table doesn't exist")
 
     table = next(filter(lambda x: x.name == tableName, db.tables))
 
-    if where is None:
-        if len(toSelect) == 1 and toSelect[0] == "*":
-            return [row.values for row in table.rows]
+    ########
 
-        output = []
-        for row in table.rows:
-            output.append(get_from_row_with_selectors(row, toSelect, table))
+    output = []
+    for row in table.rows:
+        output.append(get_from_row_with_selectors(row, toSelect, table, where))
 
-        return output
+    output = [row for row in output if row != []]
+
+    return output

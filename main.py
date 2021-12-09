@@ -119,7 +119,33 @@ def select(result):
     if result[endIndex + 4].text != "WHERE":
         raise Exception("Expected 'WHERE', got " + str(result[endIndex + 4].text))
 
-    print(str(result[endIndex + 4:]))
+    # send filters to func
+    filters = {}
+    print(str(result[endIndex + 5:]))
+
+    identifier = None
+    content = None
+
+    for index, value in enumerate(result[endIndex + 5:]):
+        if value.type == TokenType.LITERAL:
+            raise Exception("Got literal in where specifier; literals are illegal in this context. Literal: '" + str(
+                value.text) + "'")
+
+        if value.type == TokenType.IDENTIFIER:
+            identifier = value.text
+
+        if value.type == TokenType.SYMBOL and value.text == "=":
+            continue
+
+        if value.type == TokenType.STRING:
+            content = value.text
+
+        if identifier is not None and content is not None:
+            filters[identifier] = content
+            identifier = None
+            content = None
+
+    return backend.select(table_name, toSelect, filters)
 
 
 test = True
@@ -131,6 +157,8 @@ if test:
     insert_into(parse.parse_sql_str("INSERT_INTO test VALUES ( 'name3' , 'secondname2' )"))
     print(str(select(parse.parse_sql_str("SELECT * FROM test"))))
     print(str(select(parse.parse_sql_str("SELECT name FROM test"))))
+    print("---------------------")
+    print(str(select(parse.parse_sql_str("SELECT secondname FROM test WHERE name = 'name1'"))))
     # print(str(select(parse.parse_sql_str("SELECT name , secondname FROM test WHERE name='name3'"))))
 
     import sys
